@@ -1,4 +1,6 @@
+const path = require("path");
+
 exports.getHomePage = (req, res) => {
-    res.sendFile('homepage.html');
+    res.sendFile(path.join('../views/homepage.html'));
 }
 
