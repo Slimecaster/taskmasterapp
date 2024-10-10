@@ -4,6 +4,92 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>To-Do List</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+
+        #todo-container {
+            background: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            width: 300px;
+            text-align: center;
+        }
+
+        input[type="text"] {
+            width: calc(100% - 22px);
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+
+        button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            background-color: #3498db;
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+            margin-bottom: 10px;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        li.completed {
+            text-decoration: line-through; /* Apply line-through for completed tasks */
+            color: #aaa; /* Change text color for completed tasks */
+        }
+
+        li button {
+            background-color: #e74c3c;
+            border: none;
+            border-radius: 4px;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+
+        li button:hover {
+            background-color: #c0392b;
+        }
+
+        input[type="checkbox"] {
+            margin-right: 10px; /* Space between checkbox and task name */
+        }
+    </style>
 </head>
 <body>
 <h1>Welcome to the To-Do List App</h1>
@@ -14,6 +100,90 @@
     <ul id="todo-list"></ul>
 </div>
 
+<script src="server.js"></script> <!-- Link to your JS file -->
+<script>
+    const todoInput = document.getElementById('todo-input');
+    const todoList = document.getElementById('todo-list');
+    const addTodoButton = document.getElementById('add-todo');
+
+    // Function to fetch and display tasks
+    const fetchTasks = async () => {
+        const response = await fetch('/tasks');
+        const tasks = await response.json();
+        todoList.innerHTML = ''; // Clear the current list
+        tasks.forEach((task, index) => {
+            const li = document.createElement('li');
+            li.textContent = task.name; // Assuming your task has a 'name' property
+            li.dataset.index = index; // Store the index for future reference
+
+            // Create a checkbox
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.checked = task.completed || false; // Set checkbox state based on task's completed property
+            checkbox.onchange = () => toggleTaskCompletion(index); // Attach change function
+            li.prepend(checkbox); // Add checkbox to the start of the list item
+
+            if (checkbox.checked) {
+                li.classList.add('completed'); // Add class for completed tasks
+            }
+
+            // Update completed status when checkbox is checked/unchecked
+            checkbox.onchange = () => {
+                li.classList.toggle('completed', checkbox.checked); // Toggle completed class
+                toggleTaskCompletion(index); // Update backend status
+            };
+
+            const deleteButton = document.createElement('button');
+            deleteButton.textContent = 'Delete';
+            deleteButton.onclick = () => deleteTask(index); // Attach delete function
+            li.appendChild(deleteButton);
+            todoList.appendChild(li);
+        });
+    };
+
+    // Function to add a new task
+    const addTask = async () => {
+        if (!todoInput.value.trim()) return; // Prevent adding empty tasks
+        const task = { name: todoInput.value, completed: false }; // Add completed property
+        await fetch('/tasks', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(task),
+        });
+        todoInput.value = ''; // Clear the input field
+        await fetchTasks(); // Refresh the task list
+    };
+
+    // Function to delete a task
+    const deleteTask = async (index) => {
+        await fetch(`/tasks/${index}`, {
+            method: 'DELETE',
+        });
+        await fetchTasks(); // Refresh the task list
+    };
+
+    // Function to toggle task completion
+    const toggleTaskCompletion = async (index) => {
+        const response = await fetch(`/tasks/${index}`);
+        const task = await response.json();
+        task.completed = !task.completed; // Toggle completed status
+        await fetch(`/tasks/${index}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(task),
+        });
+        await fetchTasks(); // Refresh the task list
+    };
+
+    // Event listener for the Add button
+    addTodoButton.addEventListener('click', addTask);
+
+    // Initial fetch to populate the list
+    fetchTasks();
+</script>
 </body>
 </html>
-

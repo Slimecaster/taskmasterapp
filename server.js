@@ -55,7 +55,7 @@ app.delete('/tasks/:index',(req,res)=>{
 });
 
 app.get('/', (req, res) => {
-    res.sendFile(__dirname+'/public/views/homepage.html');
+    res.sendFile(__dirname+'/homepage.html');
 });
 
 
